@@ -6,7 +6,7 @@ class Api::V1::BooksController < ApplicationController
     @book = Book.create book_params
 
     if @book.valid?
-      render json: @book, status: :created
+      render json: BookSerializer.new(@book).serializable_hash[:data][:attributes], status: :created
     else
       render json: @book.errors, status: :unprocessable_entity
     end
@@ -17,7 +17,7 @@ class Api::V1::BooksController < ApplicationController
 
     if @book.present?
       if @book.update(book_params)
-        render json: @book, status: :no_content
+        render json: BookSerializer.new(@book).serializable_hash[:data][:attributes], status: :ok
 
       else
         render json: @book.errors, status: :unprocessable_entity

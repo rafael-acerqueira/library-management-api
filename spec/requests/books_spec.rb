@@ -96,8 +96,8 @@ RSpec.describe 'Books', type: :request do
 
       context 'when book exists' do
         let(:book_id) { book.id }
-        it 'returns status code 204' do
-          expect(response).to have_http_status(:no_content)
+        it 'returns status code 200' do
+          expect(response).to have_http_status(:ok)
         end
         it 'updates the book' do
           updated_item = Book.find(book.id)
