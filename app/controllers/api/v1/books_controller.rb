@@ -10,6 +10,12 @@ class Api::V1::BooksController < ApplicationController
     end
   end
 
+  def destroy
+    @book = Book.find params[:id]
+    @book.destroy
+    render status: :no_content
+  end
+
   private
 
   def book_params
