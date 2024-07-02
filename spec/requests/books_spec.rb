@@ -20,23 +20,23 @@ RSpec.describe 'Books', type: :request do
       end
 
       it 'returns the title' do
-        expect(JSON.parse(response.body)['title']).to eq(book.title)
+        expect(json["title"]).to eq(book.title)
       end
 
       it 'returns the author' do
-        expect(JSON.parse(response.body)['author']).to eq(book.author)
+        expect(json["author"]).to eq(book.author)
       end
 
       it 'returns the genre' do
-        expect(JSON.parse(response.body)['genre']).to eq(book.genre)
+        expect(json["genre"]).to eq(book.genre)
       end
 
       it 'returns the isbn' do
-        expect(JSON.parse(response.body)['isbn']).to eq(book.isbn)
+        expect(json["isbn"]).to eq(book.isbn)
       end
 
       it 'returns the total_copies' do
-        expect(JSON.parse(response.body)['total_copies']).to eq(book.total_copies)
+        expect(json["total_copies"]).to eq(book.total_copies)
       end
 
       it 'returns a created status' do
@@ -97,7 +97,7 @@ RSpec.describe 'Books', type: :request do
       context 'when book exists' do
         let(:book_id) { book.id }
         it 'returns status code 204' do
-          expect(response).to have_http_status(204)
+          expect(response).to have_http_status(:no_content)
         end
         it 'updates the book' do
           updated_item = Book.find(book.id)
@@ -108,7 +108,7 @@ RSpec.describe 'Books', type: :request do
       context 'when the book does not exist' do
         let(:book_id) { 0 }
         it 'returns status code 404' do
-          expect(response).to have_http_status(404)
+          expect(response).to have_http_status(:not_found)
         end
         it 'returns a not found message' do
           expect(response.body).to include("null")
@@ -119,7 +119,7 @@ RSpec.describe 'Books', type: :request do
         let(:user) { FactoryBot.create(:user) }
         let(:book_id) { book.id }
         it 'returns status code 401' do
-          expect(response).to have_http_status(401)
+          expect(response).to have_http_status(:unauthorized)
         end
       end
     end
@@ -148,14 +148,163 @@ RSpec.describe 'Books', type: :request do
     context "librarian user" do
       let(:user) { FactoryBot.create(:user, :librarian) }
       it 'returns status code 204' do
-        expect(response).to have_http_status(204)
+        expect(response).to have_http_status(:no_content)
       end
     end
 
     context "common user" do
       let(:user) { FactoryBot.create(:user) }
       it 'returns status code 401' do
-        expect(response).to have_http_status(401)
+        expect(response).to have_http_status(:unauthorized)
+      end
+    end
+  end
+
+  describe "GET /search" do
+    context "librarian user" do
+      let!(:book_1) {
+        FactoryBot.create(:book,
+          title: "The Lost Symbol",
+          author: "Dan Brown",
+          genre: "Fiction"
+        )
+      }
+
+      let!(:book_2) {
+        FactoryBot.create(:book,
+        title: "The Hobbit",
+        author: "J. R. R. Tolkien",
+        genre: "Fantasy")
+      }
+
+      let!(:book_3) {
+        FactoryBot.create(:book,
+        title: "Harry Potter and the Goblet of Fire",
+        author: "JK Rowling",
+        genre: "Fantasy")
+      }
+
+      let!(:book_4) {
+        FactoryBot.create(:book,
+        title: "Harry Potter and the Prisoner of Azkaban",
+        author: "JK Rowling",
+        genre: "Fantasy")
+      }
+
+      let(:user) { FactoryBot.create(:user, :librarian) }
+
+      before do
+        login_as(user)
+      end
+
+      context "found books by title" do
+        before do
+          get "/api/v1/books/search", params: { title: book_1.title }
+        end
+
+        it 'should list books' do
+          expect(json.length).to eq(1)
+          expect(json[0]["title"]).to eq(book_1.title)
+          expect(json[0]["author"]).to eq(book_1.author)
+          expect(json[0]["genre"]).to eq(book_1.genre)
+        end
+
+        it 'returns status code 200' do
+          expect(response).to have_http_status(:ok)
+        end
+      end
+
+      context "found books by author" do
+        before do
+          get "/api/v1/books/search", params: { author: book_3.author }
+        end
+
+        it 'should list books' do
+          expect(json.length).to eq(2)
+          expect(json[0]["title"]).to eq(book_3.title)
+          expect(json[0]["author"]).to eq(book_3.author)
+          expect(json[0]["genre"]).to eq(book_3.genre)
+
+          expect(json[1]["title"]).to eq(book_4.title)
+          expect(json[1]["author"]).to eq(book_4.author)
+          expect(json[1]["genre"]).to eq(book_4.genre)
+        end
+
+        it 'returns status code 200' do
+          expect(response).to have_http_status(:ok)
+        end
+      end
+
+      context "found books by genre" do
+        before do
+          get "/api/v1/books/search", params: { genre: book_4.genre }
+        end
+
+        it 'should list books' do
+          expect(json.length).to eq(3)
+
+          expect(json[0]["title"]).to eq(book_2.title)
+          expect(json[0]["author"]).to eq(book_2.author)
+          expect(json[0]["genre"]).to eq(book_2.genre)
+
+          expect(json[1]["title"]).to eq(book_3.title)
+          expect(json[1]["author"]).to eq(book_3.author)
+          expect(json[1]["genre"]).to eq(book_3.genre)
+
+          expect(json[2]["title"]).to eq(book_4.title)
+          expect(json[2]["author"]).to eq(book_4.author)
+          expect(json[2]["genre"]).to eq(book_4.genre)
+        end
+
+        it 'returns status code 200' do
+          expect(response).to have_http_status(:ok)
+        end
+      end
+
+      context "found books by more than one filter" do
+        before do
+          get "/api/v1/books/search", params: {
+                                                genre: book_4.genre,
+                                                author: book_4.author
+                                              }
+        end
+
+        it 'should list books' do
+          expect(json.length).to eq(2)
+
+          expect(json[0]["title"]).to eq(book_3.title)
+          expect(json[0]["author"]).to eq(book_3.author)
+          expect(json[0]["genre"]).to eq(book_3.genre)
+
+          expect(json[1]["title"]).to eq(book_4.title)
+          expect(json[1]["author"]).to eq(book_4.author)
+          expect(json[1]["genre"]).to eq(book_4.genre)
+        end
+
+        it 'returns status code 200' do
+          expect(response).to have_http_status(:ok)
+        end
+      end
+    end
+
+    context "common user" do
+      let(:user) { FactoryBot.create(:user) }
+      let(:book) { FactoryBot.create(:book)}
+
+      before do
+        login_as(user)
+        get "/api/v1/books/search", params: { title: book.title }
+      end
+
+      it 'should list books' do
+        expect(json.length).to eq(1)
+        expect(json[0]["title"]).to eq(book.title)
+        expect(json[0]["author"]).to eq(book.author)
+        expect(json[0]["genre"]).to eq(book.genre)
+      end
+
+      it 'returns status code 200' do
+        expect(response).to have_http_status(:ok)
       end
     end
   end

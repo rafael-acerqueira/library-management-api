@@ -11,7 +11,9 @@ Rails.application.routes.draw do
 
   namespace :api do
     namespace :v1 do
-      resources :books, except: :index
+      resources :books, except: :index do
+        get :search, on: :collection
+      end
     end
   end
 end
