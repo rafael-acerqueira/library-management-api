@@ -1,0 +1,21 @@
+default: &default
+  adapter: postgresql
+  encoding: unicode
+  host: postgres
+  username: <%= Rails.application.credentials.dig(:db, :username) %>
+  password: <%= Rails.application.credentials.dig(:db, :password) %>
+  pool: <%= ENV.fetch("RAILS_MAX_THREADS") { 5 } %>
+
+development:
+  <<: *default
+  database: rails_library_system_development
+
+test:
+  <<: *default
+  database: rails_library_system_test
+
+production:
+  <<: *default
+  database: rails_library_system_production
+  username: rails_library_system
+  password: <%= ENV["LIBRARY_SYSTEM_DATABASE_PASSWORD"] %>
