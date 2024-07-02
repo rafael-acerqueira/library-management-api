@@ -10,6 +10,21 @@ class Api::V1::BooksController < ApplicationController
     end
   end
 
+  def update
+    @book = Book.find_by(id: params[:id])
+
+    if @book.present?
+      if @book.update(book_params)
+        render json: @book, status: :no_content
+
+      else
+        render json: @book.errors, status: :unprocessable_entity
+      end
+    else
+      render json: @book, status: :not_found
+    end
+end
+
   def destroy
     @book = Book.find params[:id]
     @book.destroy
