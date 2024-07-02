@@ -2,10 +2,13 @@ require 'rails_helper'
 
 RSpec.describe 'Books', type: :request do
   describe 'POST /create' do
-    context 'with valid parameters' do
+    context 'with valid parameters and librarian user' do
       let(:book) { FactoryBot.create(:book) }
+      let(:user) { FactoryBot.create(:user, :librarian) }
+
 
       before do
+        login_as(user)
         post '/api/v1/books', params:
                           { book: {
                             title: book.title,
@@ -41,8 +44,10 @@ RSpec.describe 'Books', type: :request do
       end
     end
 
-    context 'with invalid parameters' do
+    context 'with invalid parameters and librarian user' do
+      let(:user) { FactoryBot.create(:user, :librarian) }
       before do
+        login_as(user)
         post '/api/v1/books', params:
                           { book: {
                             title: ''
@@ -53,12 +58,28 @@ RSpec.describe 'Books', type: :request do
         expect(response).to have_http_status(:unprocessable_entity)
       end
     end
+
+    context 'common user' do
+      let(:user) { FactoryBot.create(:user) }
+      before do
+        login_as(user)
+        post '/api/v1/books', params:
+                          { book: {
+                            title: ''
+                          } }
+      end
+
+      it 'returns a unprocessable entity status' do
+        expect(response).to have_http_status(:unauthorized)
+      end
+    end
   end
 
   describe "PUT /update" do
     let(:book) { FactoryBot.create(:book) }
+    let(:user) { FactoryBot.create(:user, :librarian) }
 
-    context 'with valid parameters' do
+    context 'with valid parameters and librarian user' do
 
       let(:valid_attributes) {{
         title: 'Title 1',
@@ -69,6 +90,7 @@ RSpec.describe 'Books', type: :request do
       }}
 
       before do
+        login_as(user)
         put "/api/v1/books/#{book_id}", params: { book: valid_attributes }
       end
 
@@ -92,11 +114,20 @@ RSpec.describe 'Books', type: :request do
           expect(response.body).to include("null")
         end
       end
+
+      context 'common user' do
+        let(:user) { FactoryBot.create(:user) }
+        let(:book_id) { book.id }
+        it 'returns status code 401' do
+          expect(response).to have_http_status(401)
+        end
+      end
     end
 
-    context 'with invalid parameters' do
-
+    context 'with invalid parameters and librarian user' do
+      let(:user) { FactoryBot.create(:user, :librarian) }
       before do
+        login_as(user)
         put "/api/v1/books/#{book.id}", params: { book: { title: '' } }
       end
 
@@ -110,11 +141,22 @@ RSpec.describe 'Books', type: :request do
     let(:book) { FactoryBot.create(:book) }
 
     before do
+      login_as(user)
       delete "/api/v1/books/#{book.id}"
     end
 
-    it 'returns status code 204' do
-      expect(response).to have_http_status(204)
+    context "librarian user" do
+      let(:user) { FactoryBot.create(:user, :librarian) }
+      it 'returns status code 204' do
+        expect(response).to have_http_status(204)
+      end
+    end
+
+    context "common user" do
+      let(:user) { FactoryBot.create(:user) }
+      it 'returns status code 401' do
+        expect(response).to have_http_status(401)
+      end
     end
   end
 end

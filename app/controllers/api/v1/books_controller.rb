@@ -1,5 +1,7 @@
 class Api::V1::BooksController < ApplicationController
 
+  before_action :is_librarian?
+
   def create
     @book = Book.create book_params
 
