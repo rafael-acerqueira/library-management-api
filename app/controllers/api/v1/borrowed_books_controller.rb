@@ -1,5 +1,7 @@
 class Api::V1::BorrowedBooksController < ApplicationController
 
+  before_action :is_librarian?, only: :update
+
   def create
     @borrowed_book = BorrowedBook.new(borrowed_book_params.merge({
                                                     user: current_user,
@@ -12,6 +14,16 @@ class Api::V1::BorrowedBooksController < ApplicationController
     if @borrowed_book.valid? && @book.is_available? && current_user.can_borrow?(@book)
       @borrowed_book.save
       render json: BorrowedBookSerializer.new(@borrowed_book).serializable_hash[:data][:attributes], status: :created
+    else
+      render json: @borrowed_book.errors, status: :unprocessable_entity
+    end
+  end
+
+  def update
+    @borrowed_book = BorrowedBook.find_by(id: params[:id])
+
+    if @borrowed_book.update(returned: true)
+      render json: BorrowedBookSerializer.new(@borrowed_book).serializable_hash[:data][:attributes], status: :ok
     else
       render json: @borrowed_book.errors, status: :unprocessable_entity
     end

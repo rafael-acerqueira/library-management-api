@@ -15,7 +15,7 @@ Rails.application.routes.draw do
         get :search, on: :collection
       end
 
-      resources :borrowed_books, only: :create
+      resources :borrowed_books, only: [:create, :update]
     end
   end
 end

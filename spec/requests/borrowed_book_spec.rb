@@ -106,4 +106,48 @@ RSpec.describe 'Borrowed Book', type: :request do
       end
     end
   end
+
+  describe 'PATCH /return' do
+    context 'librarian user can return a book' do
+      let(:librarian) { FactoryBot.create(:user, :librarian) }
+      let(:user) { FactoryBot.create(:user) }
+      let(:book) { FactoryBot.create(:book) }
+
+      let!(:borrowed_book) do
+        FactoryBot.create(:borrowed_book, user: user, book: book)
+      end
+
+      before do
+        login_as(librarian)
+        patch "/api/v1/borrowed_books/#{borrowed_book.id}"
+      end
+
+      it 'returns status code 200' do
+        expect(response).to have_http_status(:ok)
+      end
+
+      it 'updates the borrowed_book' do
+        borrowed_book.reload
+        expect(borrowed_book.returned).to be true
+      end
+    end
+
+    context 'common user can not return a book' do
+      let(:user) { FactoryBot.create(:user) }
+      let(:book) { FactoryBot.create(:book) }
+
+      let!(:borrowed_book) do
+        FactoryBot.create(:borrowed_book, user: user, book: book)
+      end
+
+      before do
+        login_as(user)
+        patch "/api/v1/borrowed_books/#{borrowed_book.id}"
+      end
+
+      it 'returns status code 401' do
+        expect(response).to have_http_status(:unauthorized)
+      end
+    end
+  end
 end
