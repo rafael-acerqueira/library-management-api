@@ -16,6 +16,7 @@ Rails.application.routes.draw do
       end
 
       resources :borrowed_books, only: [:create, :update]
+      resources :dashboard, only: :index
     end
   end
 end
