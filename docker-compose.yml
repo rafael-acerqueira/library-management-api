@@ -12,6 +12,9 @@ services:
     environment:
       DATABASE_URL: postgres://postgres:postgres@db:5432/library_system  # Database connection parameters
 
+    tty: true
+    stdin_open: true
+
   # Service for the PostgreSQL database
   db:
     image: postgres:13  # Use the official PostgreSQL version 13 image
