@@ -14,6 +14,8 @@ Rails.application.routes.draw do
       resources :books, except: :index do
         get :search, on: :collection
       end
+
+      resources :borrowed_books, only: :create
     end
   end
 end
